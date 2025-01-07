@@ -174,8 +174,33 @@ const GET_SINGLE_ORDERS = async (req, res, next) => {
 }
 
 
+// /items?page=${page}&limit=${limit}
+
+const ALL_ORDER_SCHEMA_VALIDATION = Joi.object({
+    page: Joi.string().min(1).required(),
+    limit: Joi.string(),
+})
+
 const GET_ALL_ORDERS = async (req, res, next) => {
-    const orders = await orderModel.find().select("-updatedAt  -__v");
+    const { error, value } = ALL_ORDER_SCHEMA_VALIDATION.validate(req.query);
+
+    if (error) {
+        return next(createHttpError(401, "Invalid request."))
+    }
+    // assign req body to reqDATA 
+    const reqDATA = value;
+
+    const page = parseInt(reqDATA.page) || 1;
+    const limit = parseInt(reqDATA.limit) || 10;
+
+
+    const skip = (page - 1) * limit;
+
+    if (skip < 0) {
+        return next(createHttpError(401, "Invalid request.."))
+    }
+
+    const orders = await orderModel.find().select("-updatedAt  -__v").limit(limit).skip(skip);
 
     if (!orders) {
         return next(createHttpError(401, "No Orders.."))

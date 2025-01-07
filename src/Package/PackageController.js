@@ -212,6 +212,7 @@ const GET_ALL_PACKAGE = async (req, res, next) => {
 
 
 const GET_SINGLE_PACKAGE = async (req, res, next) => {
+    console.log("called..");
     const PKG_ID = req?.params?.PKG_ID.trim();
 
     console.log(PKG_ID);

@@ -1,6 +1,6 @@
 import express from "express";
 
-import { CHANGE_ADMIN_PASSWORD, DELETE_SINGLE_USERS, GET_ALL_USERS, GET_SINGLE_USERS, LoginAdmin, RegisterAdmin, VIEW_ADMIN_PROFILE } from "../Admin/adminController.js";
+import { CHANGE_ADMIN_PASSWORD, DELETE_SINGLE_USERS, GET_ALL_USERS, GET_SINGLE_USERS, LoginAdmin, RegisterAdmin, SEARCH_ORDERS, SEARCH_USERS, VIEW_ADMIN_PROFILE } from "../Admin/adminController.js";
 import { Product } from "../Products/productController.js";
 import { ADD_NEW_PACKAGE, DELETE_SINGLE_PACKAGE, GET_ALL_PACKAGE, GET_SINGLE_PACKAGE, UPDATE_PACKAGE } from "../Package/PackageController.js";
 
@@ -8,13 +8,10 @@ import { GET_ALL_ORDERS, GET_ALL_ORDERS_BY_USER_ID, GET_SINGLE_ORDERS } from "..
 
 import { DELETE_EMPLOYEE, EMPLOYEE_LIST, GET_SINGLE_EMPLOYEE, NEW_EMPLOYEE } from "../Employee/EmployeeController.js";
 
-
 // AUTH..
 import isAdmin from "../middleware/isAdmin.js";
 
 const AdminRoute = express.Router();
-
-
 
 
 // Routes For Admin..
@@ -34,6 +31,7 @@ AdminRoute.get('/package/', isAdmin, GET_ALL_PACKAGE)
 
 AdminRoute.get('/package/:PKG_ID', GET_SINGLE_PACKAGE)
 
+
 // ADMIN=> Update Package..
 AdminRoute.patch('/package/:PKG_ID', UPDATE_PACKAGE)
 // AdminRoute.patch('/package/:PKG_ID', isAdmin, UPDATE_PACKAGE)
@@ -43,7 +41,7 @@ AdminRoute.delete('/package/:PKG_ID', DELETE_SINGLE_PACKAGE)
 
 
 // Orders  (ALl THE ROUTES Manage by ADMIN..)
-AdminRoute.get('/order/', isAdmin, GET_ALL_ORDERS)
+AdminRoute.get('/order/', GET_ALL_ORDERS)
 AdminRoute.get('/order/:ORDER_ID', isAdmin, GET_SINGLE_ORDERS)
 
 // ADMIN ( SYSTEM_DATA_MODIFICATION => ADD =>DELETE => UPDATE)
@@ -58,5 +56,11 @@ AdminRoute.post('/new-employee', isAdmin, NEW_EMPLOYEE)
 AdminRoute.get('/employee', isAdmin, EMPLOYEE_LIST)
 AdminRoute.get('/employee/:EMP_ID', isAdmin, GET_SINGLE_EMPLOYEE)
 AdminRoute.delete('/employee/:EMP_ID', isAdmin, DELETE_EMPLOYEE)
+
+
+// SERACH USERS
+AdminRoute.get('/search-user', SEARCH_USERS)
+AdminRoute.get('/search-orders', SEARCH_ORDERS)
+
 
 export default AdminRoute

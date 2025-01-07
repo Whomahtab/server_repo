@@ -11,6 +11,7 @@ import { config } from "../config/_config.js";
 import jwt from "jsonwebtoken";
 import userModel from "../Users/userModel.js";
 import formatDateTime from "../utils/formateDateAndTime.js";
+import orderModel from '../Orders/orderModel.js';
 
 const RegisterAdmin = async (req, res, next) => {
     try {
@@ -63,7 +64,6 @@ const RegisterAdmin = async (req, res, next) => {
         next(createHttpError(401, `Err ${error.message}`))
     }
 }
-
 
 const LoginAdmin = async (req, res, next) => {
     try {
@@ -129,7 +129,7 @@ const LoginAdmin = async (req, res, next) => {
 const GET_ALL_USERS = async (req, res, next) => {
     try {
 
-        const users = await userModel.find({}, { updatedAt: 0, __v: 0, accessToken: 0, createdAt: 0 })
+        const users = await userModel.find({}, { updatedAt: 0, __v: 0, accessToken: 0, createdAt: 0 }).limit(10)
 
 
         if (!users) {
@@ -142,7 +142,6 @@ const GET_ALL_USERS = async (req, res, next) => {
         return next(createHttpError(401, "Unauthorized."))
     }
 }
-
 
 const GET_SINGLE_USERS = async (req, res, next) => {
     try {
@@ -211,11 +210,7 @@ const DELETE_SINGLE_USERS = async (req, res, next) => {
     }
 }
 
-
-
 // VIEW_ADMIN_PROFILE
-
-// ojectionType<{ createdAt: NativeDate; updatedAt: NativeDate; } & { role: "admin"; fullName?: string | null | undefined;
 
 const VIEW_ADMIN_PROFILE = async (req, res, next) => {
     try {
@@ -235,49 +230,133 @@ const VIEW_ADMIN_PROFILE = async (req, res, next) => {
 }
 
 
-
 const CHANGE_ADMIN_PASSWORD = async (req, res, next) => {
     try {
         const { error, value } = CHANGE_ADMIN_PASSWORD_SCHEMA_VALIDATION.validate(req.body);
         const reqDATA = value;
-        const ADMIN_ID = "675aba148213b5001e7a7221"
+        const ADMIN_ID = req?.user;
+
+        if (reqDATA.password === reqDATA.newPassword) {
+            return next(createHttpError(401, "Invalid request.."));
+        }
+
+
+        if (!ADMIN_ID) {
+            return next(createHttpError(406, "Invalid request.."))
+        }
+
+
+
         if (error) {
             return next(createHttpError(401, error?.details.at(0).message))
         }
 
-        // Check admin oldpassword and newpassword should not be same
 
-        if (reqDATA.password === reqDATA.newPassword) {
-            return next(createHttpError(401, "Invalid entry."))
+        // CHCEK PSWD IS SAME OR NOT  IF SAME RETURN 
+
+        const Admin = await adminModel.findById(ADMIN_ID)
+
+        if (!Admin) {
+            return next(createHttpError(406, "Invalid request.."))
+        }
+
+        // Compare old password 
+
+        const isOldPasswordValid = await bcrypt.compare(reqDATA.password, Admin.password)
+
+        if (!isOldPasswordValid) {
+            return next(createHttpError(401, "Inavlid password"))
         }
 
 
-        // check admin old password is  Valid or not..
+        // On Success of Password match
 
-        const admin = await adminModel.findById(ADMIN_ID);
-        if (!admin) {
-            return next(createHttpError(401, "Unauthorized."))
+        const newPasswordHash = await bcrypt.hash(reqDATA.newPassword, 10)
+
+        Admin.password = newPasswordHash;
+
+        await Admin.save();
+
+        console.log("Password changed successfully...");
+        return res.status(201).json({ success: true, msg: "Password change successfully" })
+    } catch (error) {
+        return next(createHttpError(500, `Error from CHANGE PSWD${error} `))
+    }
+}
+
+const SEARCH_USERS = async (req, res, next) => {
+    try {
+        const searchKey = req?.query?.s;
+
+        if (!searchKey) {
+            return next(createHttpError(401, "Invalid requests.."))
         }
 
-        if (admin.password != reqDATA.password) {
-            return next(createHttpError(401, "Invalid entry."))
+        const mobileNumberRegex = /^(?!(\d)\1{9})[6789]\d{9}$/;
+
+        let searchTypeMobileNumber = mobileNumberRegex.test(searchKey);
+
+        const searchQuery = searchTypeMobileNumber ? { mobileNum: searchKey } : { fullName: new RegExp(searchKey, 'i') }
+
+        if (searchTypeMobileNumber) {
+            const users = await userModel.findOne(searchQuery, { accessToken: 0, role: 0, otp: 0, updatedAt: 0, __v: 0, id: 0 });
+
+            if (!users) {
+                return next(createHttpError(401, `Oops no user found with ${searchKey}`))
+            }
+
+            const prettyDATA = [users]
+            return res.status(200).json(prettyDATA)
         }
 
-        // UPDATE ADMIN PASS
+        // if search key is user name
+        const users = await userModel.find(searchQuery, { accessToken: 0, role: 0, otp: 0, updatedAt: 0, __v: 0, id: 0 });
+        if (!users) {
+            return next(createHttpError(401, `Oops no user found with ${searchKey}`))
+        }
 
-        admin.password = reqDATA.newPassword;
-
-        await admin.save();
-
-        res.json({ msg: "Ok" })
+        return res.status(200).json(users)
 
 
     } catch (error) {
-        return next(createHttpError(500, error))
+        return next(createHttpError(401, `Internal error ${error}`))
     }
 }
 
 
+const VALIDATE_SEARCH_SCHEMA = Joi.object(
+    {
+        searchKey: Joi.string().min(5).max(20).required()
+    })
+
+const SEARCH_ORDERS = async (req, res, next) => {
+    try {
+
+        const { error, value } = VALIDATE_SEARCH_SCHEMA.validate(req.query)
+        if (error) {
+            return next(createHttpError(400, "Invalid request"))
+        }
+        const reqDATA = value;
+
+
+        const Order = await orderModel.findOne({ order_id: reqDATA.searchKey },
+            { updatedAt: 0, __v: 0, order_id: 0, isPackage: 0, payment_method: 0, products: 0, total_amount: 0, createdAt: 0 });
+
+        if (!Order) {
+            return next(createHttpError(401, "Invalid order id."))
+        }
+
+        const prettyDATA = {
+            success: true,
+            ...Order._doc
+        }
+
+        return res.json(prettyDATA)
+
+    } catch (error) {
+        return next(createHttpError(401, `Internal errors ${error.message}`))
+    }
+}
 
 export {
     RegisterAdmin,
@@ -286,8 +365,9 @@ export {
     GET_SINGLE_USERS,
     DELETE_SINGLE_USERS,
     VIEW_ADMIN_PROFILE,
-    CHANGE_ADMIN_PASSWORD
+    CHANGE_ADMIN_PASSWORD,
+    SEARCH_USERS,
+    SEARCH_ORDERS
 }
-
 
 

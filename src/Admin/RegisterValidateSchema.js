@@ -10,7 +10,6 @@ const RegisterUserValidateSchema = Joi.object({
 })
 
 
-
 // LogIn Schema for Admin Log-In...
 
 const AdminLoginValidateSchema = Joi.object({
@@ -35,32 +34,29 @@ const AdminLoginValidateSchema = Joi.object({
 });
 
 
-
 // CHANGE_ADMIN_PASSWORD
 const CHANGE_ADMIN_PASSWORD_SCHEMA_VALIDATION = Joi.object({
     password: Joi.string()
         .min(6)
-        .max(100)
+        .max(50)
         .required()
         .messages({
             'string.min': 'Password must be at least 6 characters long.',
-            'string.max': 'Password must be at most 100 characters long.',
+            'string.max': 'Password must be at most 50 characters long.',
             'string.empty': 'Password is required.',
             'any.required': 'Password is required.',
         }),
     newPassword: Joi.string()
         .min(6)
-        .max(100)
+        .max(50)
         .required()
         .messages({
             'string.min': 'Password must be at least 6 characters long.',
-            'string.max': 'Password must be at most 100 characters long.',
+            'string.max': 'Password must be at most 50 characters long.',
             'string.empty': 'Password is required.',
             'any.required': 'Password is required.',
         }),
 })
-
-
 
 
 export { RegisterUserValidateSchema, AdminLoginValidateSchema, CHANGE_ADMIN_PASSWORD_SCHEMA_VALIDATION }

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
+    id: { type: String, required: true, unique: true },
     fullName: { type: String }, //..
     age: { type: String }, //..
     gender: { type: String }, //..

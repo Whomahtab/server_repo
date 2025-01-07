@@ -6,82 +6,81 @@ import userRegisterSchema from "./userRegisterValidateSchema.js";
 import jwt from 'jsonwebtoken';
 import { config } from '../config/_config.js'
 import sendOTP from "../utils/sendOTP.js";
+import { nanoid } from "nanoid";
 
 const RegisterUserValidateSchema = Joi.object({
-    mobileNum: Joi.string().length(10).pattern(/^[0-9]+$/).required()
+    mobileNum: Joi.string().length(10).required()
 });
-
 
 // Register User with Mobile Number..
 const RegisterUser = async (req, res, next) => {
     try {
-        const { mobileNum } = req.body;
-
-        const { error, reqData } = RegisterUserValidateSchema.validate(req.body)
+        const { error, value } = RegisterUserValidateSchema.validate(req.body)
 
         if (error) {
             next(createHttpError(400, "Please fill the form carefully"))
             return
         }
+        const reqDATA = value;
 
-        // On Success...
-        //   Dummy OTP forUser verification..
+        //   Function return OTP..
         function generateOTP() {
-            const newOtp = Math.floor(1000 + Math.random() * 9000);
-            return newOtp.toString()
+            const newOtp = Math.floor(100000 + Math.random() * 900000);
+            return newOtp.toString();
         }
-
         const newOtp = generateOTP()
 
         // SEND OTP THROUGH  SMS_API
-        const OTP = await sendOTP(newOtp, mobileNum)
-
+        const OTP = await sendOTP(newOtp, reqDATA?.mobileNum)
         console.log("OTP_DB", OTP);
 
         if (OTP.return == false) {
             return next(createHttpError(401, "SMS_API_ERROR"))
         }
-        // const newOtp = await bcrypt.hash(generateOTP(), 10)
+        // END-- SMS_API
 
-        const isUserExists = await userModel.findOne({ mobileNum: mobileNum })
+        // USER MODEL...
+        const isUserExists = await userModel.findOne({ mobileNum: reqDATA?.mobileNum })
 
-        if (isUserExists) {
-            try {
-                // generate Otp for Existing user ..
-                const newUserOtp = await otpModel.create({ otp: newOtp, userId: isUserExists.id, isVerified: false })
-                isUserExists.otp = newUserOtp.id;
-                await isUserExists.save();
+        // FOR NEW USERS..
+        if (!isUserExists) {
+            const user_ID = nanoid();
+            const newOTP = await otpModel.create({ otp: newOtp, userId: null, isVerified: false });
+            const user = await userModel.create({ id: user_ID, mobileNum: reqDATA.mobileNum, otp: newOTP?._id });
 
-                return res.status(200).json({
+            newOTP.userId = user._id;
+            await newOTP.save()
+
+            // For New Users send  Response..
+            return res.json(
+                {
                     success: true,
-                    // id: newUserOtp.id,
-                });
-            } catch (error) {
-                return next(createHttpError(401, "Something went wrong.."))
-            }
+                }
+            )
+
         }
-        // for new User store user details and generate OTP..
 
-        const _newOtp = await otpModel.create({ otp: newOtp, userId: null, isVerified: false })
-        const user = await userModel.create({ mobileNum, otp: _newOtp.id });
-        _newOtp.userId = user.id;
-        await _newOtp.save()
+        // FOR EXISTING USERS..
+        try {
+            const UserOtp = await otpModel.create({ otp: newOtp, userId: isUserExists._id, isVerified: false });
 
+            isUserExists.otp = UserOtp._id;
 
-        // For New Users send  Response..
-        return res.json(
-            {
+            await isUserExists.save();
+
+            return res.status(200).json({
                 success: true,
-                // id: _newOtp.id,
-            }
-        )
+            });
+        } catch (error) {
+            return next(createHttpError(401, "Something went wrong.."))
+        }
+
 
     } catch (error) {
         console.log(error);
-        next(createHttpError(401, "Invalid Entry..."))
+        next(createHttpError(401, `ERR.${error}`))
         return
     }
-
 
 
     //  insert user Mobile number into Db..
@@ -93,15 +92,15 @@ const RegisterUser = async (req, res, next) => {
 }
 
 
-
 const UpdateUser = async (req, res, next) => {
-    // isVerified => if user all data Like (Name,age,gender,address, areaPin, role)
-
     const userID = req.params.userID;
     if (!userID) {
         next(createHttpError(401, "Please fill the form carefully.."))
     }
 
+    if (userID !== req.user) {
+        return next(createHttpError(401, "Unauthorize.."))
+    }
 
     const { fullName, age, gender, address, role, areaPin } = req.body;
 
@@ -155,13 +154,11 @@ const UpdateUser = async (req, res, next) => {
 
 }
 
-
-
 // Validate SChema for OTP
 
 const otpValidateSchema = Joi.object({
     mobileNum: Joi.string().length(10).pattern(/^[0-9]+$/).required(),
-    clientOtp: Joi.string().length(4).required(),
+    clientOtp: Joi.string().length(6).required(),
 });
 
 
@@ -201,7 +198,7 @@ const verifyOTP = async (req, res, next) => {
 
         // if OTP is already use or Verified return false..
         if (Otp.isVerified) {
-            return next(createHttpError(400, "Please resend the otp."))
+            return next(createHttpError(400, "resend otp."))
         }
         // validate client and DB OTP
 
@@ -213,11 +210,10 @@ const verifyOTP = async (req, res, next) => {
 
         // ON Success..
 
-
         // // send auth User Id to frontend for Verification
-        // // along with simple response we will.. send Token for AUTH..
+        // // along with simple response we will also. send Token for AUTH..
 
-        const token = jwt.sign({ id: user.id, role: user.role }, config.USER_SECRET)
+        const token = jwt.sign({ id: user._id, role: user.role }, config.USER_SECRET)
         user.accessToken = token;
 
         // validate otp in the OTP_DB for validation
@@ -246,7 +242,3 @@ const verifyOTP = async (req, res, next) => {
 
 
 export { RegisterUser, UpdateUser, verifyOTP }
-
-
-
-

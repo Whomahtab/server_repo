@@ -3,26 +3,12 @@ import jwt from "jsonwebtoken";
 import { config } from "../config/_config.js";
 import adminModel from "../Admin/adminModel.js";
 
-
 /*
-MISSING_TOKEN = ERRDVYM_AUTH20
-
-
-
-
-
-
-
+MISSING_TOKEN = ERR_DVYM_AUTH20
 */
-
-
-
-
 const isAdmin = async (req, res, next) => {
     try {
         const tokenHeader = req.headers['authorization'];
-
-
 
         if (!tokenHeader) {
             return next(createHttpError('401', 'Unauthorized-access|ERRDVYM_AUTH20'))
@@ -32,6 +18,8 @@ const isAdmin = async (req, res, next) => {
         }
 
         const token = tokenHeader.split(" ").at(1);
+
+
         if (!token) {
             return next(createHttpError('401', 'Unauthorized-access|ERRDVYM_AUTH22'))
         }

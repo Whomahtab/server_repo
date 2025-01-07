@@ -18,10 +18,9 @@ const NEW_EMPLOYEE_SCHEMA_VALIDATION = Joi.object({
 
 const NEW_EMPLOYEE = async (req, res, next) => {
     try {
-
         const { error, value } = NEW_EMPLOYEE_SCHEMA_VALIDATION.validate(req.body)
+
         if (error) {
-            // console.log(error);
             return next(createHttpError("400", error?.details[0].message))
         }
         const reqDATA = value
@@ -33,7 +32,6 @@ const NEW_EMPLOYEE = async (req, res, next) => {
         if (Employee) {
             return next(createHttpError("400", "mobile number is already registered with another account"))
         }
-
 
         // ON Success..
         const prettyDATA = {
@@ -51,7 +49,7 @@ const NEW_EMPLOYEE = async (req, res, next) => {
         const newEmployee = await EmployeeModel.create(prettyDATA)
 
         if (!newEmployee) {
-            return next(createHttpError(406, "Can't able to create new Employee Internal eroor."))
+            return next(createHttpError(406, "Can't able to create new Employee Internal error."))
         }
 
         res.status(201).json({
@@ -63,6 +61,7 @@ const NEW_EMPLOYEE = async (req, res, next) => {
                 password: employeePassword
             }
         })
+
 
     } catch (error) {
         return next(createHttpError(401, `Internal error.${error}`))
