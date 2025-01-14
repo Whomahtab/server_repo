@@ -1,6 +1,6 @@
 import Counter from "./CounterModel.js";
 // collectionName  {orderID, }
-// preText
+// preText DVYM || ORDERID_ || 
 
 async function generateOrderID(collectionName, preText) {
 

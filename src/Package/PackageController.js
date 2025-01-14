@@ -5,7 +5,7 @@ import generateOrderID from "../Counter/counterController.js";
 import { nanoid } from "nanoid";
 
 // body Validate..
-const newPkgValidateSchema = Joi.object({
+const NEW__PKG__VALIDATE__SCHEMA = Joi.object({
     // pkg_id: Joi.string().max(50).required(),
     name: Joi.string().min(3).max(100).required(),
     textContent: Joi.array(),
@@ -26,7 +26,8 @@ const newPkgValidateSchema = Joi.object({
     notes: Joi.string()
 })
 
-const updatePKG_VALIDATE_SCHEMA = Joi.object({
+
+const UPDATE__PKG__VALIDATE_SCHEMA = Joi.object({
     name: Joi.string().min(3).max(100),
     textContent: Joi.array(),
     description: Joi.string().min(3).max(500),
@@ -49,7 +50,7 @@ const updatePKG_VALIDATE_SCHEMA = Joi.object({
 // The package data will be inserted through the Admin Only.
 const ADD_NEW_PACKAGE = async (req, res, next) => {
     try {
-        const { error, value } = newPkgValidateSchema.validate(req.body);
+        const { error, value } = NEW__PKG__VALIDATE__SCHEMA.validate(req.body);
 
         if (error) {
             console.log(error);
@@ -110,7 +111,6 @@ const ADD_NEW_PACKAGE = async (req, res, next) => {
 }
 
 
-
 const UPDATE_PACKAGE = async (req, res, next) => {
     try {
         const PKG_ID = req.params?.PKG_ID;
@@ -119,7 +119,7 @@ const UPDATE_PACKAGE = async (req, res, next) => {
             next(createHttpError(401, "Invalid Package Id."))
         }
         // validate req body
-        const { error, value } = newPkgValidateSchema.validate(req.body);
+        const { error, value } = NEW__PKG__VALIDATE__SCHEMA.validate(req.body);
         if (error) {
             let errMsg = error?.details.at(0)?.message
             return next(createHttpError(401, errMsg))
@@ -166,10 +166,6 @@ const UPDATE_PACKAGE = async (req, res, next) => {
 
 const DELETE_SINGLE_PACKAGE = async (req, res, next) => {
     try {
-        // get params 
-        // const pkgID = req.params;
-        // console.log(req.params.Pkg_Id);
-        // check params in the db
         const PKG_ID = req?.params?.PKG_ID;
         if (!PKG_ID) {
             return next(createHttpError(401, "Package ID not found.."))

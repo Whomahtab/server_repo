@@ -36,7 +36,6 @@ const ORDER_SCHEMA_VALIDATION = Joi.object(
     }
 )
 
-
 const newOrder = async (req, res, next) => {
     let total_Price;
     let order_Products;
@@ -125,8 +124,6 @@ const newOrder = async (req, res, next) => {
     }
 }
 
-
-
 const GET_ALL_ORDERS_BY_USER_ID = async (req, res, next) => {
     try {
         const USER_ID = req?.params?.USER_ID;
@@ -155,7 +152,6 @@ const GET_ALL_ORDERS_BY_USER_ID = async (req, res, next) => {
     }
 }
 
-
 const GET_SINGLE_ORDERS = async (req, res, next) => {
     try {
         const ORDER_ID = req.params.ORDER_ID;
@@ -172,7 +168,6 @@ const GET_SINGLE_ORDERS = async (req, res, next) => {
         return next(createHttpError(401, "Something went wrong during fetching Orders from DB"))
     }
 }
-
 
 // /items?page=${page}&limit=${limit}
 

@@ -6,13 +6,18 @@ import helmet from "helmet";
 import AdminRoute from "./Routes/adminRoute.js";
 import rateLimit from "express-rate-limit";
 const app = express();
+import cookieParser from "cookie-parser";
 
 app.use(express.json())
+app.use(cookieParser())
 app.use(helmet())
 app.disable('x-powered-by');
 
 const corsOptions = {
     origin: "*",
+    credentials: true,
+    'methods': 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    // 'preflightContinue': false
 }
 
 // Limit each IP to 100 requests  windowMs
@@ -25,10 +30,10 @@ const globalLimiter = rateLimit({
 app.use(globalLimiter)
 
 
-
 app.use(cors(corsOptions))
 //Client_API || User API
 app.use('/api', Route)
+
 // Admin_API
 app.use('/api/admin', AdminRoute)
 

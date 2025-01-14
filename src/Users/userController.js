@@ -91,7 +91,6 @@ const RegisterUser = async (req, res, next) => {
 
 }
 
-
 const UpdateUser = async (req, res, next) => {
     const userID = req.params.userID;
     if (!userID) {
@@ -223,6 +222,13 @@ const verifyOTP = async (req, res, next) => {
 
         await user.save();
         // Save Token inside Db Too..
+
+        // SEND COOKIES
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: 'production',
+            sameSite: 'strict'
+        });
 
         return res.status(200).json({
             success: "true",
